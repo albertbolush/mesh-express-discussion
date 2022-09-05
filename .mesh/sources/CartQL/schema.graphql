@@ -1,0 +1,583 @@
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+directive @cacheControl(maxAge: Int, scope: CQL_CacheControlScope) on FIELD_DEFINITION | OBJECT | INTERFACE
+
+type Query {
+  """
+  Use this to get a cart by a custom ID. If a cart doesn't exist with this ID, it will be created for you.
+  """
+  CQL_cart(id: ID!, currency: CQL_CurrencyInput): CQL_Cart
+  CQL_node(id: ID!, currency: CQL_CurrencyInput): CQL_Node
+}
+
+input CQL_CurrencyInput {
+  code: CQL_CurrencyCode
+  symbol: String
+  thousandsSeparator: String
+  decimalSeparator: String
+  decimalDigits: Int
+}
+
+enum CQL_CurrencyCode {
+  AED
+  AFN
+  ALL
+  AMD
+  ANG
+  AOA
+  ARS
+  AUD
+  AWG
+  AZN
+  BAM
+  BBD
+  BDT
+  BGN
+  BHD
+  BIF
+  BMD
+  BND
+  BOB
+  BRL
+  BSD
+  BTC
+  BTN
+  BWP
+  BYR
+  BZD
+  CAD
+  CDF
+  CHF
+  CLP
+  CNY
+  COP
+  CRC
+  CUC
+  CUP
+  CVE
+  CZK
+  DJF
+  DKK
+  DOP
+  DZD
+  EGP
+  ERN
+  ETB
+  EUR
+  FJD
+  FKP
+  GBP
+  GEL
+  GHS
+  GIP
+  GMD
+  GNF
+  GTQ
+  GYD
+  HKD
+  HNL
+  HRK
+  HTG
+  HUF
+  IDR
+  ILS
+  INR
+  IQD
+  IRR
+  ISK
+  JMD
+  JOD
+  JPY
+  KES
+  KGS
+  KHR
+  KMF
+  KPW
+  KRW
+  KWD
+  KYD
+  KZT
+  LAK
+  LBP
+  LKR
+  LRD
+  LSL
+  LYD
+  MAD
+  MDL
+  MGA
+  MKD
+  MMK
+  MNT
+  MOP
+  MRO
+  MTL
+  MUR
+  MVR
+  MWK
+  MXN
+  MYR
+  MZN
+  NAD
+  NGN
+  NIO
+  NOK
+  NPR
+  NZD
+  OMR
+  PAB
+  PEN
+  PGK
+  PHP
+  PKR
+  PLN
+  PYG
+  QAR
+  RON
+  RSD
+  RUB
+  RWF
+  SAR
+  SBD
+  SCR
+  SDD
+  SDG
+  SEK
+  SGD
+  SHP
+  SLL
+  SOS
+  SRD
+  STD
+  SVC
+  SYP
+  SZL
+  THB
+  TJS
+  TMT
+  TND
+  TOP
+  TRY
+  TTD
+  TVD
+  TWD
+  TZS
+  UAH
+  UGX
+  USD
+  UYU
+  UZS
+  VEB
+  VEF
+  VND
+  VUV
+  WST
+  XAF
+  XCD
+  XBT
+  XOF
+  XPF
+  YER
+  ZAR
+  ZMW
+  WON
+}
+
+"""
+Carts are the core concept of CartQL. Bring your own PIM and use CartQL to calculate your Cart and Checkout.
+"""
+type CQL_Cart implements CQL_Node {
+  """A custom unique identifer for the cart provided by you."""
+  id: ID!
+  """The current currency details of the cart."""
+  currency: Currency!
+  """The customer for the cart"""
+  email: String
+  """The number of total items in the cart"""
+  totalItems: Int
+  """The number of total unique items in the cart."""
+  totalUniqueItems: Int
+  """The items currently in the cart."""
+  items: [CQL_CartItem!]!
+  """
+  Sum of all SKU items, excluding discounts, taxes, shipping, including the raw/formatted amounts and currency details
+  """
+  subTotal: CQL_Money!
+  """
+  The cart total for all items with type SHIPPING, including the raw/formatted amounts and currency details.
+  """
+  shippingTotal: CQL_Money!
+  """
+  The cart total for all items with type TAX, including the raw/formatted amounts and currency details.
+  """
+  taxTotal: CQL_Money!
+  """
+  The grand total for all items, including shipping, including the raw/formatted amounts and currency details.
+  """
+  grandTotal: CQL_Money!
+  """A simple helper method to check if the cart is empty."""
+  isEmpty: Boolean
+  """
+  A simple helper method to check if the cart hasn't been updated in the last 2 hours.
+  """
+  abandoned: Boolean
+  """Custom key/value attributes array for the cart."""
+  attributes: [CQL_CustomCartAttribute!]!
+  """Custom meta object for the cart"""
+  metadata: CQL_Json
+  """Any notes related to the cart/checkout"""
+  notes: String
+  """The date and time the cart was created."""
+  createdAt: Date!
+  """The date and time the cart was updated."""
+  updatedAt: Date!
+}
+
+interface CQL_Node {
+  id: ID!
+}
+
+"""
+Cart and Cart Items use the currency object to format their unit/line totals.
+"""
+type Currency {
+  """The currency code, e.g. USD, GBP, EUR"""
+  code: CQL_CurrencyCode
+  """The currency smybol, e.g. $, £, €"""
+  symbol: String
+  """The thousand separator, e.g. ',', '.'"""
+  thousandsSeparator: String
+  """The decimal separator, e.g. '.'"""
+  decimalSeparator: String
+  """The decimal places for the currency"""
+  decimalDigits: Int
+}
+
+"""
+A Cart Item is used to store data on the items inside the Cart. There are no strict rules about what you use the named fields for.
+"""
+type CQL_CartItem {
+  """A custom unique identifer for the item provided by you."""
+  id: ID!
+  """Name for the item."""
+  name: String
+  """Description for the item."""
+  description: String
+  """The type of cart item this is."""
+  type: CQL_CartItemType!
+  """Array of image URLs for the item."""
+  images: [String]
+  """Unit total for the individual item."""
+  unitTotal: CQL_Money!
+  """Line total (quantity * unit price)."""
+  lineTotal: CQL_Money!
+  """Quantity for the item."""
+  quantity: Int!
+  """Custom key/value attributes array for the item."""
+  attributes: [CQL_CustomCartAttribute!]!
+  """Custom metadata for the item."""
+  metadata: CQL_Json
+  """The date and time the item was created."""
+  createdAt: Date!
+  """The date and time the item was updated."""
+  updatedAt: Date!
+}
+
+"""
+Use these enums to group cart items. Cart totals will reflect these enums.
+"""
+enum CQL_CartItemType {
+  SKU
+  TAX
+  SHIPPING
+}
+
+"""
+The Money type is used when describing the Cart and Cart Item unit/line totals.
+"""
+type CQL_Money {
+  """The raw amount in cents/pence"""
+  amount: Int
+  """The current currency details of the money amount"""
+  currency: Currency!
+  """The formatted amount with the cart currency."""
+  formatted: String!
+}
+
+"""
+Custom Cart Attributes are used for any type of custom data you want to store on a Cart. These are transferred to Orders when you checkout.
+"""
+type CQL_CustomCartAttribute {
+  key: String!
+  value: String
+}
+
+scalar CQL_Json
+
+scalar Date
+
+type Mutation {
+  """
+  Use this to add items to the cart. If the item already exists, the provided input will be merged and quantity will be increased.
+  """
+  CQL_addItem(input: CQL_AddToCartInput!): CQL_Cart!
+  """
+  Use this to set all the items at once in the cart. This will override any existing items.
+  """
+  CQL_setItems(input: CQL_SetCartItemsInput!): CQL_Cart!
+  """
+  Use this to update any existing items in the cart. If the item doesn't exist, it'll return an error.
+  """
+  CQL_updateItem(input: CQL_UpdateCartItemInput!): CQL_Cart!
+  """
+  Use this to increase the item quantity of the provided item ID. If the item doesn't exist, it'll throw an error.
+  """
+  CQL_incrementItemQuantity(input: CQL_UpdateItemQuantityInput!): CQL_Cart!
+  """
+  Use this to decrease the item quantity of the provided item ID. If the item doesn't exist, it'll throw an error.
+  """
+  CQL_decrementItemQuantity(input: CQL_UpdateItemQuantityInput!): CQL_Cart!
+  """
+  Use this to remove any items from the cart. If it doesn't exist, it'll throw an error.
+  """
+  CQL_removeItem(input: CQL_RemoveCartItemInput!): CQL_Cart!
+  """
+  Use this to empty the cart. If the cart doesn't exist, it'll throw an error.
+  """
+  CQL_emptyCart(input: CQL_EmptyCartInput!): CQL_Cart!
+  """
+  Use this to update the cart currency or metadata. If the cart doesn't exist, it'll throw an error.
+  """
+  CQL_updateCart(input: CQL_UpdateCartInput!): CQL_Cart!
+  """
+  Use this to delete a cart. If the cart doesn't exist, it'll throw an error.
+  """
+  CQL_deleteCart(input: CQL_DeleteCartInput!): CQL_DeletePayload!
+  """Use this to convert a cart to an unpaid order."""
+  CQL_checkout(input: CQL_CheckoutInput!): CQL_Order
+}
+
+input CQL_AddToCartInput {
+  cartId: ID!
+  id: ID!
+  name: String
+  description: String
+  type: CQL_CartItemType = SKU
+  images: [String]
+  price: Int!
+  currency: CQL_CurrencyInput
+  quantity: Int = 1
+  attributes: [CQL_CustomAttributeInput]
+  metadata: CQL_Json
+}
+
+input CQL_CustomAttributeInput {
+  key: String!
+  value: String
+}
+
+input CQL_SetCartItemsInput {
+  cartId: ID!
+  items: [CQL_SetCartItemInput!]!
+}
+
+input CQL_SetCartItemInput {
+  id: ID!
+  name: String
+  description: String
+  type: CQL_CartItemType = SKU
+  images: [String]
+  price: Int!
+  currency: CQL_CurrencyInput
+  quantity: Int = 1
+  attributes: [CQL_CustomAttributeInput]
+  metadata: CQL_Json
+}
+
+input CQL_UpdateCartItemInput {
+  cartId: ID!
+  id: ID!
+  name: String
+  description: String
+  type: CQL_CartItemType
+  images: [String]
+  price: Int
+  quantity: Int
+  metadata: CQL_Json
+}
+
+input CQL_UpdateItemQuantityInput {
+  """The ID of the Cart in which the CartItem belongs to."""
+  cartId: ID!
+  """The ID of the CartItem you wish to update."""
+  id: ID!
+  """The amount (as Int) you wish to increment the Cart item quantity by."""
+  by: Int!
+}
+
+input CQL_RemoveCartItemInput {
+  """The ID of the Cart in which the CartItem belongs to."""
+  cartId: ID!
+  """The ID of the CartItem you wish to remove."""
+  id: ID!
+}
+
+input CQL_EmptyCartInput {
+  """The ID of the Cart you wish to empty."""
+  id: ID!
+}
+
+input CQL_UpdateCartInput {
+  id: ID!
+  currency: CQL_CurrencyInput
+  email: String
+  notes: String
+  attributes: [CQL_CustomAttributeInput]
+  metadata: CQL_Json
+}
+
+input CQL_DeleteCartInput {
+  """The ID of the Cart you wish to delete."""
+  id: ID!
+}
+
+type CQL_DeletePayload {
+  success: Boolean!
+  message: String
+}
+
+input CQL_CheckoutInput {
+  cartId: ID!
+  email: String!
+  notes: String
+  shipping: CQL_AddressInput!
+  billing: CQL_AddressInput
+  metadata: CQL_Json
+}
+
+input CQL_AddressInput {
+  company: String
+  name: String!
+  line1: String!
+  line2: String
+  city: String!
+  state: String
+  postalCode: String!
+  country: String!
+}
+
+"""
+Orders are immutable. Once created, you can't change them. The status will automatically reflect the current payment status.
+"""
+type CQL_Order {
+  id: ID!
+  """The ID of the cart you want to "checkout"."""
+  cartId: ID!
+  """
+  The email of the recipient. Can be used later for cart recovery emails.
+  """
+  email: String!
+  """The orders shipping address."""
+  shipping: CQL_Address!
+  """The orders billing address."""
+  billing: CQL_Address!
+  """The order items that were in the cart."""
+  items: [CQL_OrderItem!]!
+  """
+  Sum of all SKU items, excluding discounts, taxes, shipping, including the raw/formatted amounts and currency details
+  """
+  subTotal: CQL_Money!
+  """
+  The total for all items with type SHIPPING, including the raw/formatted amounts and currency details.
+  """
+  shippingTotal: CQL_Money!
+  """
+  The total for all items with type TAX, including the raw/formatted amounts and currency details.
+  """
+  taxTotal: CQL_Money!
+  """
+  The grand total for all items, including shipping, including the raw/formatted amounts and currency details.
+  """
+  grandTotal: CQL_Money!
+  """The total item count."""
+  totalItems: Int!
+  """The total unique item count."""
+  totalUniqueItems: Int!
+  """The notes set at checkout."""
+  notes: String
+  """The custom attributes set at checkout"""
+  attributes: [CQL_CustomAttribute!]!
+  """The metadata set at checkout"""
+  metadata: CQL_Json
+  """
+  The current order status. This will reflect the current payment status. The first stage is 'unpaid'.
+  """
+  status: CQL_OrderStatus!
+  """The date and time the order was created."""
+  createdAt: Date!
+  """The date and time the order status was updated."""
+  updatedAt: Date!
+}
+
+"""
+Addresses are associated with Orders. They can either be shipping or billing addresses.
+"""
+type CQL_Address {
+  """Use this to keep an optional company name for addresses."""
+  company: String
+  """Use this to keep the name of the recipient."""
+  name: String!
+  """Use this to keep the first line of the address."""
+  line1: String!
+  """Use this to keep the apartment, door number, etc."""
+  line2: String
+  """Use this to keep the city/town name."""
+  city: String!
+  """Use this to keep the state/county name."""
+  state: String
+  """Use this to keep the post/postal/zip code."""
+  postalCode: String!
+  """Use this to keep the country name."""
+  country: String!
+}
+
+"""
+Orders contain items that were converted from the Cart at 'checkout'.
+
+Order items are identical to the CartItem type.
+"""
+type CQL_OrderItem {
+  id: ID!
+  name: String
+  description: String
+  type: CQL_CartItemType!
+  images: [String]
+  unitTotal: CQL_Money!
+  lineTotal: CQL_Money!
+  quantity: Int!
+  createdAt: Date!
+  updatedAt: Date!
+  attributes: [CQL_CustomCartAttribute!]!
+  metadata: CQL_Json
+}
+
+type CQL_CustomAttribute {
+  key: String!
+  value: String
+}
+
+enum CQL_OrderStatus {
+  UNPAID
+  PAID
+}
+
+enum CQL_CacheControlScope {
+  PUBLIC
+  PRIVATE
+}
+
+"""The `Upload` scalar type represents a file upload."""
+scalar CQL_Upload
