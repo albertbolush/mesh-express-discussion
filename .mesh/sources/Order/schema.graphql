@@ -9,4 +9,6 @@ type Query {
 type Order {
   id: ID
   name: String
+  attribute_id: String
+  contract_id: String
 }

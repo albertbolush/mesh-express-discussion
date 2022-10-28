@@ -3,10 +3,10 @@ schema {
 }
 
 type Query {
-  order(id: ID): Order
+  attribute(id: ID): Attribute
 }
 
-type Order {
+type Attribute {
   id: ID
   name: String
 }

@@ -3,10 +3,10 @@ schema {
 }
 
 type Query {
-  order(id: ID): Order
+  contract(id: ID): Contract
 }
 
-type Order {
+type Contract {
   id: ID
   name: String
 }

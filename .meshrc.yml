@@ -1,0 +1,50 @@
+sources:
+  - name: Order
+    handler:
+      graphql:
+        schema: ./order-schema.ts
+  - name: Contract
+    handler:
+      graphql:
+        schema: ./contract-schema.ts
+  - name: Attribute
+    handler:
+      graphql:
+        schema: ./attribute-schema.ts
+additionalTypeDefs: |
+  extend type Order {
+    contract: Contract
+    attribute: Attribute
+  }
+  extend type Contract {
+    attribute: Attribute
+  }
+additionalResolvers:
+  - targetTypeName: Order
+    targetFieldName: contract
+    sourceName: Contract
+    sourceTypeName: Query
+    sourceFieldName: "contract"
+    requiredSelectionSet: "{ contract_id }"
+    sourceArgs: {
+      "id": "{root.contract_id}",
+      }
+  - targetTypeName: Order
+    targetFieldName: attribute
+    sourceName: Attribute
+    sourceTypeName: Query
+    sourceFieldName: "attribute"
+    requiredSelectionSet: "{ attribute_id }"
+    sourceArgs: {
+      "id": "{root.attribute_id}",
+      }
+  - targetTypeName: Contract
+    targetFieldName: attribute
+    sourceName: Attribute
+    sourceTypeName: Query
+    sourceFieldName: "attribute"
+    requiredSelectionSet: "{ attribute_id }"
+    sourceArgs: {
+      "id": "{root.attribute_id}",
+      }
+
